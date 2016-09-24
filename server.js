@@ -2,8 +2,11 @@ var http=require('http');
 var fs=require('fs');
 var path=require('path');
 var mime=require('mime');
+var ipEm=require('events').EventEmitter;
+var ipEmObject=new ipEm();
 
 var cache={};
+var ip;
 /* 请求文件不存在时发送404错误*/
 function send404(response){
   response.writeHead(404,{'Content-Type':'text/plain'});
@@ -47,6 +50,14 @@ function serveStatic(response,cache,absPath){
 
 var server=http.createServer(function(request,response){
   var filePath=false;
+  // var ip = request.headers['x-forwarded-for'] ||
+  //    request.connection.remoteAddress ||
+  //    request.socket.remoteAddress ||
+  //    request.connection.socket.remoteAddress;
+  ip=request.connection.remoteAddress.substring(5,30);//获取客户端ip
+  
+     ipEmObject.emit('gip',ip);//发送事件，让客户端用自己的ip作为聊天名称
+
   if(request.url == '/'){
     filePath='public/index.html';
     console.log("路径/public/index.html");
@@ -65,4 +76,5 @@ server.listen(3000,function(){
 
 
 var chatServer=require('./lib/chat_server');
-chatServer.listen(server);
+
+chatServer.listen(server,ipEmObject);
